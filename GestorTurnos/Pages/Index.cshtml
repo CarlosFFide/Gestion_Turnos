@@ -1,0 +1,98 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Panel principal";
+}
+
+<div class="page-title">
+    <h1>Gestión de turnos</h1>
+    <p>Registra clientes y administra el orden de atención.</p>
+</div>
+
+@if (TempData["Mensaje"] is string mensaje)
+{
+    <div class="notice notice-success" role="status">@mensaje</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="notice notice-error" role="alert">@error</div>
+}
+@if (Model.MensajeError is not null)
+{
+    <div class="notice notice-error" role="alert">@Model.MensajeError</div>
+}
+
+<section class="summary" aria-label="Resumen de turnos">
+    <div class="summary-box">
+        <span>Turnos en espera</span>
+        <strong>@Model.Pendientes.Count</strong>
+    </div>
+    <div class="summary-box">
+        <span>Atendidos hoy</span>
+        <strong>@Model.AtendidosHoy</strong>
+    </div>
+</section>
+
+<div class="content-grid">
+    <section class="card">
+        <div class="card-title">
+            <h2>Turnos pendientes</h2>
+            <p>Orden de llegada de los clientes</p>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>Turno</th><th>Cliente</th><th>Hora</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    @if (Model.Pendientes.Count == 0)
+                    {
+                        <tr><td colspan="4" class="empty-state">No hay turnos pendientes.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var turno in Model.Pendientes)
+                        {
+                            <tr>
+                                <td>@turno.Numero</td>
+                                <td>@turno.NombreCliente</td>
+                                <td>@(turno.FechaRegistroUtc.ToLocalTime().ToString("HH:mm"))</td>
+                                <td><span class="status waiting">En espera</span></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="side-content">
+        <section class="card card-padding">
+            <h2>Siguiente turno</h2>
+            <div class="current-turn">
+                @if (Model.Siguiente is not null)
+                {
+                    <strong>@Model.Siguiente.Numero</strong>
+                    <span>@Model.Siguiente.NombreCliente</span>
+                }
+                else
+                {
+                    <strong>—</strong>
+                    <span>No hay turnos pendientes</span>
+                }
+            </div>
+            <form method="post" asp-page-handler="Atender">
+                <button class="button button-primary" type="submit" disabled="@(Model.Siguiente is null)">Atender siguiente</button>
+            </form>
+        </section>
+
+        <section class="card card-padding">
+            <h2>Registrar turno</h2>
+            <form method="post" asp-page-handler="Registrar">
+                <label for="cliente">Nombre del cliente</label>
+                <input id="cliente" name="nombreCliente" type="text" placeholder="Nombre completo" maxlength="120" value="@Model.NombreClienteIngresado" required />
+                <button class="button button-outline" type="submit">Registrar turno</button>
+            </form>
+        </section>
+    </div>
+</div>

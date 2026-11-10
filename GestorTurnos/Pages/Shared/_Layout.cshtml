@@ -1,0 +1,29 @@
+@{
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "/Index";
+    var isHistory = currentPage == "/Historial";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Gestor de turnos</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-content">
+            <a asp-page="/Index" class="site-name">Gestor de turnos</a>
+            <nav class="site-nav" aria-label="Navegación principal">
+                <a asp-page="/Index" class="@(isHistory ? "" : "active")">Panel principal</a>
+                <a asp-page="/Historial" class="@(isHistory ? "active" : "")">Historial</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        @RenderBody()
+    </main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

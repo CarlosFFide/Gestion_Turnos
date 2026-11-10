@@ -1,0 +1,92 @@
+@page
+@model HistorialModel
+@{
+    ViewData["Title"] = "Historial";
+}
+
+<div class="page-title">
+    <h1>Historial de turnos</h1>
+    <p>Consulta los registros de atención de clientes.</p>
+</div>
+
+<section class="card">
+    <div class="card-title card-title-inline">
+        <h2>Turnos atendidos</h2>
+        <form method="get" asp-page="/Historial" class="history-search" role="search">
+            <input class="search-box" name="busqueda" type="search" placeholder="Buscar turno o cliente" aria-label="Buscar turno o cliente" value="@Model.Busqueda" />
+            <button class="search-button" type="submit">Buscar</button>
+        </form>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>Turno</th><th>Cliente</th><th>Registro</th><th>Atención</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+                @if (Model.Turnos.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="empty-state">@(string.IsNullOrEmpty(Model.Busqueda) ? "Aún no hay turnos atendidos." : "No se encontraron turnos.")</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var turno in Model.Turnos)
+                    {
+                        <tr>
+                            <td>@turno.Numero</td>
+                            <td>@turno.NombreCliente</td>
+                            <td>@(turno.FechaRegistroUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</td>
+                            <td>@(turno.FechaAtencionUtc?.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</td>
+                            <td><span class="status attended">Atendido</span></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const form = document.querySelector('.history-search');
+            const input = form.querySelector('input[name="busqueda"]');
+            const results = document.querySelector('.table-container tbody');
+            let timer;
+            let controller;
+            let currentRequest = 0;
+
+            async function filtrar() {
+                const request = ++currentRequest;
+                controller?.abort();
+                controller = new AbortController();
+
+                const url = new URL(form.action, window.location.href);
+                url.searchParams.set('busqueda', input.value);
+
+                try {
+                    const response = await fetch(url, { signal: controller.signal });
+                    if (!response.ok) return;
+
+                    const documentResult = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    const newResults = documentResult.querySelector('.table-container tbody');
+                    if (!newResults || request !== currentRequest) return;
+
+                    results.replaceChildren(...Array.from(newResults.children).map(row => document.importNode(row, true)));
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        return;
+                    }
+                }
+            }
+
+            input.addEventListener('input', () => {
+                clearTimeout(timer);
+                currentRequest++;
+                controller?.abort();
+                timer = setTimeout(filtrar, 180);
+            });
+        })();
+    </script>
+}
